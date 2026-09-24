@@ -1,0 +1,54 @@
+# Von on CPU: open-source System One decision server, Jev-compatible HTTP API.
+# Image is built from the Dockerfile in this directory (von-sdk from PyPI).
+#
+#   docker compose up -d --build --wait
+#   curl -s localhost:8000/health
+#   curl -s localhost:8000/v1/systemone -H 'content-type: application/json' -d '{
+#     "state": {"body": "billed twice, refund please or we cancel"},
+#     "questions": {"dept": {"type": "choice", "instructions": "which team?",
+#                   "criteria": {"billing": "refunds", "tech": "bugs"}}}
+#   }'
+
+services:
+  von:
+    image: von:cpu
+    build:
+      context: .
+      args:
+        VON_VERSION: "1.2.2"
+        TORCH_VERSION: "2.14.0"
+    ports:
+      # Loopback only. Set VON_API_KEY before changing to 0.0.0.0.
+      - "${VON_BIND_ADDRESS:-127.0.0.1}:${VON_PORT:-8000}:${VON_PORT:-8000}"
+    environment:
+      VON_DEVICE: cpu
+      VON_PORT: "${VON_PORT:-8000}"
+      # Keep threads at or below your physical core count.
+      OMP_NUM_THREADS: "${VON_THREADS:-4}"
+      # Optional bearer auth: clients send "Authorization: Bearer <key>".
+      VON_API_KEY: "${VON_API_KEY:-}"
+      # Browser origins allowed to call the API directly. "*" = any.
+      VON_CORS_ORIGINS: "${VON_CORS_ORIGINS:-*}"
+      # Optional; the wfzyx/von checkpoint is public.
+      HF_TOKEN: "${HF_TOKEN:-}"
+      HF_HUB_OFFLINE: "${HF_HUB_OFFLINE:-0}"
+    volumes:
+      - von-models:/home/von/.cache/huggingface   # weights survive restarts
+      - ./healthcheck.py:/healthcheck.py:ro
+    init: true
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 4g
+    healthcheck:
+      # Real inference call: Von loads weights lazily, so /health alone is not readiness.
+      test: ["CMD", "python", "/healthcheck.py"]
+      interval: 30s
+      timeout: 25s
+      retries: 3
+      start_period: 10m   # first boot downloads ~1.5 GB of weights
+      start_interval: 5s
+
+volumes:
+  von-models:
