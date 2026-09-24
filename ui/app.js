@@ -314,7 +314,9 @@ function answerCard(name, a) {
     body = `<div class="headline">${a.score.toFixed(2)} <small>of 0 to ${keys.length - 1}</small></div>`
       + keys.map((k) => bar(`${k}: ${a.legend[k] ?? ""}`, a.probabilities[k], k === argmax)).join("");
   } else if (a.type === "noul") {
-    body = `<div class="headline">${pct(a.noul)} <small>P(true)</small></div>` + bar("true", a.noul, a.noul >= 0.5);
+    const isTrue = a.noul >= 0.5;
+    body = `<div class="headline">${isTrue ? "true" : "false"} <small>${pct(isTrue ? a.noul : 1 - a.noul)}</small></div>`
+      + bar("true", a.noul, isTrue) + bar("false", 1 - a.noul, !isTrue);
   } else {
     body = `<pre>${esc(JSON.stringify(a, null, 2))}</pre>`;
   }

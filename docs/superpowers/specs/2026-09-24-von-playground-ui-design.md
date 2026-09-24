@@ -97,7 +97,7 @@ Answer kind is detected from `answer.type`, not from the draft.
 
 - `choice`: winning key in bold, one horizontal bar per option sorted by probability descending, percentage label on each. Confidence badge.
 - `score`: headline `score` to 2 decimals, with the range `0` to `levels - 1` shown next to it. One bar per level ordered by numeric key, label from `legend`, argmax highlighted. Confidence badge.
-- `noul`: a single bar for p(true) with percentage. No badge.
+- `noul`: headline shows the verdict, `true` when p(true) is 0.5 or above, else `false`, with that verdict's probability. Two bars, `true` at p and `false` at 1 - p, winner highlighted. No badge.
 - Confidence badge bands: 0.8 and above green, 0.5 and above amber, below red.
 - Run footer: `model` from the response, `input_tokens`, `output_tokens`, wall time in ms measured with `performance.now()` around the `fetch`.
 - "Raw JSON" toggle showing the pretty-printed response with a copy button.
