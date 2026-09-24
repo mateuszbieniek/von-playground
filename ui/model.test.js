@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   newQuestion, emptyDraft, isDraftEmpty, parseState, stateToText,
-  buildQuestion, buildRequest, validate, parseRequest, formatDetail,
+  buildQuestion, buildRequest, validate, parseRequest, formatDetail, toCurl, PRESETS,
 } from "./model.js";
 
 test("parseState: JSON object text becomes object", () => {
@@ -181,4 +181,23 @@ test("formatDetail: string passthrough, pydantic array joined", () => {
     { loc: ["body", "state"], msg: "Field required" },
   ]), "body.questions: Field required\nbody.state: Field required");
   assert.equal(formatDetail(undefined), "Unprocessable request (422).");
+});
+
+test("toCurl: no auth header when key empty, single quotes escaped", () => {
+  const out = toCurl("http://localhost:8000", { state: "it's", questions: {} }, "");
+  assert.ok(out.startsWith("curl -s http://localhost:8000/v1/systemone \\\n  -H 'content-type: application/json' \\\n  -d '"));
+  assert.ok(!out.includes("Authorization"));
+  assert.ok(out.includes("it'\\''s"));
+});
+
+test("toCurl: auth header when key set", () => {
+  const out = toCurl("http://x", { state: "s", questions: {} }, "k1");
+  assert.ok(out.includes("-H 'Authorization: Bearer k1'"));
+});
+
+test("PRESETS: three, one per type, each valid", () => {
+  assert.deepEqual(PRESETS.map((p) => p.name), ["Ticket triage", "Review sentiment", "Churn risk"]);
+  assert.deepEqual(PRESETS.map((p) => p.draft.questions[0].type), ["choice", "score", "noul"]);
+  for (const p of PRESETS) assert.deepEqual(validate(p.draft), [], p.name);
+  assert.equal(PRESETS[1].draft.questions[0].levels.length, 5);
 });

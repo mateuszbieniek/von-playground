@@ -127,3 +127,33 @@ export function formatDetail(detail) {
   }
   return "Unprocessable request (422).";
 }
+
+export function toCurl(apiBase, body, apiKey) {
+  const auth = apiKey ? ` \\\n  -H 'Authorization: Bearer ${apiKey}'` : "";
+  const json = JSON.stringify(body, null, 2).replace(/'/g, "'\\''");
+  return `curl -s ${apiBase}/v1/systemone \\\n  -H 'content-type: application/json'${auth} \\\n  -d '${json}'`;
+}
+
+function preset(name, state, questions) {
+  return { name, draft: { state, questions: questions.map((q) => ({ ...newQuestion(q.type), ...q, id: newId() })) } };
+}
+
+export const PRESETS = [
+  preset("Ticket triage", "billed twice this month, refund please or we cancel", [
+    { type: "choice", name: "dept", instructions: "Which team should handle this ticket?", criteria: [
+      { key: "billing", description: "payments, invoices, refunds" },
+      { key: "tech", description: "bugs, crashes, login problems" },
+      { key: "sales", description: "pricing, upgrades, new plans" },
+    ] },
+  ]),
+  preset("Review sentiment", "Shipping was slow but the product itself is solid and support answered fast.", [
+    { type: "score", name: "sentiment", instructions: "How positive is this review?", levels: [
+      "very negative", "negative", "neutral", "positive", "very positive",
+    ] },
+  ]),
+  preset("Churn risk", '{"body": "this is the third outage this week, we are evaluating alternatives", "plan": "enterprise"}', [
+    { type: "noul", name: "churn", instructions: "Is this customer likely to cancel?",
+      trueText: "threatens to leave, mentions competitors, repeated failures",
+      falseText: "routine question, satisfied tone" },
+  ]),
+];
