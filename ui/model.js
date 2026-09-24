@@ -84,3 +84,46 @@ export function validate(draft) {
   });
   return errors;
 }
+
+export function parseRequest(json) {
+  let body;
+  try {
+    body = JSON.parse(json);
+  } catch (e) {
+    throw new Error(`Invalid JSON: ${e.message}`);
+  }
+  if (!body || typeof body !== "object" || Array.isArray(body)) throw new Error("Request must be a JSON object.");
+  if (!("state" in body)) throw new Error('Missing "state".');
+  if (!body.questions || typeof body.questions !== "object" || Array.isArray(body.questions)) {
+    throw new Error('"questions" must be an object.');
+  }
+  const questions = Object.entries(body.questions).map(([name, q]) => {
+    if (!q || typeof q !== "object") throw new Error(`Question "${name}" must be an object.`);
+    const instructions = typeof q.instructions === "string" ? q.instructions : JSON.stringify(q.instructions ?? "");
+    const base = { id: newId(), name, type: q.type, instructions };
+    if (q.type === "choice") {
+      if (!q.criteria || typeof q.criteria !== "object" || Array.isArray(q.criteria)) {
+        throw new Error(`Question "${name}": choice needs a criteria object.`);
+      }
+      return { ...base, criteria: Object.entries(q.criteria).map(([key, description]) => ({ key, description: description ?? "" })) };
+    }
+    if (q.type === "score") {
+      if (!Array.isArray(q.criteria)) throw new Error(`Question "${name}": score needs a criteria array.`);
+      return { ...base, levels: q.criteria.map((l) => (typeof l === "string" ? l : JSON.stringify(l))) };
+    }
+    if (q.type === "noul") {
+      const c = q.criteria && typeof q.criteria === "object" ? q.criteria : {};
+      return { ...base, trueText: c.true ?? "", falseText: c.false ?? "" };
+    }
+    throw new Error(`Question "${name}": unknown type "${q.type}".`);
+  });
+  return { state: stateToText(body.state), questions };
+}
+
+export function formatDetail(detail) {
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    return detail.map((d) => `${(d.loc || []).join(".")}: ${d.msg}`).join("\n");
+  }
+  return "Unprocessable request (422).";
+}

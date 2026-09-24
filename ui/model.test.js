@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   newQuestion, emptyDraft, isDraftEmpty, parseState, stateToText,
-  buildQuestion, buildRequest, validate,
+  buildQuestion, buildRequest, validate, parseRequest, formatDetail,
 } from "./model.js";
 
 test("parseState: JSON object text becomes object", () => {
@@ -129,4 +129,56 @@ test("validate: score needs 2 to 10 non-empty levels", () => {
   assert.deepEqual(validate(mk(["a"])), ['"q": needs 2 to 10 levels.']);
   assert.deepEqual(validate(mk(Array(11).fill("l"))), ['"q": needs 2 to 10 levels.']);
   assert.deepEqual(validate(mk(["a", ""])), ['"q": a level is empty.']);
+});
+
+test("parseRequest: round-trips a built request", () => {
+  const draft = { state: "hello", questions: [
+    { ...newQuestion("choice"), name: "dept", instructions: "which?", criteria: [
+      { key: "billing", description: "refunds" }, { key: "tech", description: "" } ] },
+    { ...newQuestion("score"), name: "anger", instructions: "how?", levels: ["calm", "mad"] },
+    { ...newQuestion("noul"), name: "churn", instructions: "cancel?", trueText: "leaves", falseText: "stays" },
+  ] };
+  const back = parseRequest(JSON.stringify(buildRequest(draft)));
+  assert.equal(back.state, "hello");
+  assert.equal(back.questions.length, 3);
+  const [c, s, n] = back.questions;
+  assert.equal(c.name, "dept");
+  assert.deepEqual(c.criteria, [{ key: "billing", description: "refunds" }, { key: "tech", description: "" }]);
+  assert.deepEqual(s.levels, ["calm", "mad"]);
+  assert.equal(n.trueText, "leaves");
+  assert.equal(n.falseText, "stays");
+  assert.ok(c.id && s.id && n.id);
+});
+
+test("parseRequest: object state becomes pretty JSON text", () => {
+  const back = parseRequest('{"state":{"body":"x"},"questions":{"q":{"type":"noul","instructions":"i"}}}');
+  assert.equal(back.state, '{\n  "body": "x"\n}');
+  assert.equal(back.questions[0].trueText, "");
+});
+
+test("parseRequest: structured instructions are stringified", () => {
+  const back = parseRequest('{"state":"s","questions":{"q":{"type":"noul","instructions":{"k":1}}}}');
+  assert.equal(back.questions[0].instructions, '{"k":1}');
+});
+
+test("parseRequest: errors", () => {
+  assert.throws(() => parseRequest("{nope"), /Invalid JSON/);
+  assert.throws(() => parseRequest("[]"), /must be a JSON object/);
+  assert.throws(() => parseRequest('{"questions":{}}'), /Missing "state"/);
+  assert.throws(() => parseRequest('{"state":"s","questions":[]}'), /"questions" must be an object/);
+  assert.throws(() => parseRequest('{"state":"s","questions":{"q":{"type":"choice","instructions":"i"}}}'),
+    /choice needs a criteria object/);
+  assert.throws(() => parseRequest('{"state":"s","questions":{"q":{"type":"score","instructions":"i","criteria":{}}}}'),
+    /score needs a criteria array/);
+  assert.throws(() => parseRequest('{"state":"s","questions":{"q":{"type":"magic","instructions":"i"}}}'),
+    /unknown type "magic"/);
+});
+
+test("formatDetail: string passthrough, pydantic array joined", () => {
+  assert.equal(formatDetail("boom"), "boom");
+  assert.equal(formatDetail([
+    { loc: ["body", "questions"], msg: "Field required" },
+    { loc: ["body", "state"], msg: "Field required" },
+  ]), "body.questions: Field required\nbody.state: Field required");
+  assert.equal(formatDetail(undefined), "Unprocessable request (422).");
 });
