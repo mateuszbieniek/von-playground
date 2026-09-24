@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A deployment repo that runs [Von](https://github.com/wfzyx/von) (open-source System One decision model, Jev-compatible `/v1/systemone` API) on CPU via Docker Compose. Upstream ships no Dockerfile, so `Dockerfile` here installs the `von-sdk` PyPI release on `python:3.12-slim` with CPU-only torch. There is no application source in this repo.
 
-Files: `Dockerfile` (image), `docker-compose.yml` (service `von`), `healthcheck.py` (readiness probe mounted into the container).
+Files: `Dockerfile` (image), `docker-compose.yml` (services `von` and `playground`), `healthcheck.py` (readiness probe mounted into the container), `ui/` (static playground page served by `nginx:alpine`, no build step).
 
 ## Commands
 
@@ -16,6 +16,9 @@ docker compose logs -f von              # server logs
 docker compose down                     # stop; add -v to also drop cached weights (~3 GB re-download)
 curl -s localhost:8000/health           # liveness only, see note below
 curl -s localhost:8000/v1/models        # model aliases
+open http://localhost:3000                # playground UI (service `playground`)
+node --test ui/model.test.js                           # unit tests for ui/model.js (Node 18+, no deps)
+node --check ui/app.js                    # syntax check for the DOM module
 ```
 
 Smoke test (all three question types):
@@ -39,6 +42,10 @@ curl -s localhost:8000/v1/systemone -H 'content-type: application/json' -d '{
 - **CORS is built in** (`VON_CORS_ORIGINS`, default `*`), so a browser page on another origin can call the API directly. Laya, the previous engine, had none.
 - **One model only.** The request `model` field accepts aliases (`von-latest`, `von-1.2.0`, `jev-latest`, ...) but the response is always stamped `von-1.2.0`.
 
+## Playground UI
+
+`ui/` is a static page (`index.html`, `style.css`, `app.js`, `model.js`) served by the `playground` service. The browser calls Von directly at the API base URL shown in the toolbar (default `http://localhost:8000`, saved in `localStorage`, overridable with `?api=`); this works because Von's CORS default is `*`. `model.js` is pure and unit-tested; `app.js` is DOM only. Design spec: `docs/superpowers/specs/2026-09-24-von-playground-ui-design.md`.
+
 ## Configuration
 
 Environment variables read by Compose (shell or `.env`):
@@ -48,6 +55,7 @@ Environment variables read by Compose (shell or `.env`):
 - `VON_API_KEY`: optional bearer auth. Set it before changing `VON_BIND_ADDRESS` to `0.0.0.0`. `healthcheck.py` reads the same variable inside the container.
 - `VON_CORS_ORIGINS`: comma-separated allowlist, default `*`.
 - `HF_TOKEN`, `HF_HUB_OFFLINE`: Hugging Face access; the checkpoint is public.
+- `PLAYGROUND_PORT` (default 3000), `PLAYGROUND_BIND_ADDRESS` (default `127.0.0.1`): where the playground page is served. The page itself needs no configuration; the API URL and optional API key are entered in its toolbar (key is never persisted).
 
 Build args in `docker-compose.yml`: `VON_VERSION` (PyPI release, 1.2.2) and `TORCH_VERSION` (CPU wheel from `download.pytorch.org/whl/cpu`).
 

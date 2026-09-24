@@ -23,7 +23,7 @@
 - Default API base URL `http://localhost:8000`. Playground port `${PLAYGROUND_PORT:-3000}` bound to `${PLAYGROUND_BIND_ADDRESS:-127.0.0.1}`.
 - Health dot states: `unknown` grey, `down` red, `up` amber, `serving` green.
 - Error copy (verbatim): 401 → `API key required or wrong. Set it in the toolbar.`; network or 5xx → `Von unreachable at {api}`.
-- Test command: `node --test ui/`. Syntax check: `node --check ui/app.js`.
+- Test command: `node --test ui/model.test.js`. Syntax check: `node --check ui/app.js`.
 
 ## File map
 
@@ -353,7 +353,7 @@ test("buildRequest: envelope with von-latest and questions keyed by name", () =>
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `cd /home/majzok/ai/jev-local && node --test ui/`
+Run: `cd /home/majzok/ai/jev-local && node --test ui/model.test.js`
 Expected: FAIL, `SyntaxError: The requested module './model.js' does not provide an export named 'buildQuestion'` (or similar missing export).
 
 - [ ] **Step 3: Implement**
@@ -424,7 +424,7 @@ export function buildRequest(draft) {
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `cd /home/majzok/ai/jev-local && node --test ui/`
+Run: `cd /home/majzok/ai/jev-local && node --test ui/model.test.js`
 Expected: all 12 tests pass, `# fail 0`.
 
 - [ ] **Step 5: Commit (skip, not a git repo)**
@@ -500,7 +500,7 @@ test("validate: score needs 2 to 10 non-empty levels", () => {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `cd /home/majzok/ai/jev-local && node --test ui/`
+Run: `cd /home/majzok/ai/jev-local && node --test ui/model.test.js`
 Expected: FAIL, missing export `validate`.
 
 - [ ] **Step 3: Implement**
@@ -538,7 +538,7 @@ export function validate(draft) {
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `cd /home/majzok/ai/jev-local && node --test ui/`
+Run: `cd /home/majzok/ai/jev-local && node --test ui/model.test.js`
 Expected: `# fail 0`.
 
 - [ ] **Step 5: Commit (skip)**
@@ -618,7 +618,7 @@ test("formatDetail: string passthrough, pydantic array joined", () => {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `cd /home/majzok/ai/jev-local && node --test ui/`
+Run: `cd /home/majzok/ai/jev-local && node --test ui/model.test.js`
 Expected: FAIL, missing exports `parseRequest`, `formatDetail`.
 
 - [ ] **Step 3: Implement**
@@ -672,7 +672,7 @@ export function formatDetail(detail) {
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `cd /home/majzok/ai/jev-local && node --test ui/`
+Run: `cd /home/majzok/ai/jev-local && node --test ui/model.test.js`
 Expected: `# fail 0`.
 
 - [ ] **Step 5: Commit (skip)**
@@ -719,7 +719,7 @@ test("PRESETS: three, one per type, each valid", () => {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `cd /home/majzok/ai/jev-local && node --test ui/`
+Run: `cd /home/majzok/ai/jev-local && node --test ui/model.test.js`
 Expected: FAIL, missing exports `toCurl`, `PRESETS`.
 
 - [ ] **Step 3: Implement**
@@ -760,7 +760,7 @@ export const PRESETS = [
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `cd /home/majzok/ai/jev-local && node --test ui/`
+Run: `cd /home/majzok/ai/jev-local && node --test ui/model.test.js`
 Expected: `# fail 0`, 26 tests total.
 
 - [ ] **Step 5: Commit (skip)**
@@ -997,7 +997,7 @@ refreshErrors();
 
 - [ ] **Step 4: Syntax check and manual verification**
 
-Run: `cd /home/majzok/ai/jev-local && node --check ui/app.js && node --test ui/`
+Run: `cd /home/majzok/ai/jev-local && node --check ui/app.js && node --test ui/model.test.js`
 Expected: no syntax error, tests still pass.
 
 Open `http://localhost:3000` (hard refresh). Verify:
@@ -1193,7 +1193,7 @@ $("#run").addEventListener("click", run);
 
 - [ ] **Step 4: Syntax check and manual verification**
 
-Run: `cd /home/majzok/ai/jev-local && node --check ui/app.js && node --test ui/`
+Run: `cd /home/majzok/ai/jev-local && node --check ui/app.js && node --test ui/model.test.js`
 Expected: clean.
 
 In the browser (hard refresh), with the `von` container healthy:
@@ -1317,13 +1317,13 @@ refreshErrors();
 
 - [ ] **Step 4: Syntax check and manual verification**
 
-Run: `cd /home/majzok/ai/jev-local && node --check ui/app.js && node --test ui/`
+Run: `cd /home/majzok/ai/jev-local && node --check ui/app.js && node --test ui/model.test.js`
 Expected: clean.
 
 Browser (hard refresh):
 - Dot goes grey → amber → green within a second while `von` is healthy. Hover shows `Von serving`.
 - `docker compose stop von`: within 10 s dot turns red. `docker compose start von`: dot turns amber (liveness ok), then after a Run or reload, green.
-- Load "Ticket triage", click "Raw request": textarea shows the full body. Edit `"criteria": ["only one"]` on a score question (or change a `type` to `"score"` with one level) and Run: server 422 `detail` text appears under the tabs.
+- Load "Ticket triage", click "Raw request": textarea shows the full body. Change a question's `type` to `"magic"` and Run: server 422 `detail` text appears under the tabs. (Von accepts a one-level score, so that is not a 422 trigger.)
 - Click "Form" with valid raw JSON: form rebuilt with the same questions; state textarea re-enabled. Click "Form" with broken JSON: error shown, stays in raw mode.
 - `Ctrl+Enter` in any textarea runs.
 - With `VON_API_KEY=secret docker compose up -d von` (recreates the container; weights are cached so it is fast): Run with empty key shows `API key required or wrong. Set it in the toolbar.`; typing `secret` into the key field and running succeeds; the curl export now includes the Authorization header. Afterwards restore with `docker compose up -d von` without the variable.
@@ -1352,7 +1352,7 @@ In "Commands", after the `curl -s localhost:8000/v1/models` line add:
 
 ```bash
 open http://localhost:3000                # playground UI (service `playground`)
-node --test ui/                           # unit tests for ui/model.js (Node 18+, no deps)
+node --test ui/model.test.js                           # unit tests for ui/model.js (Node 18+, no deps)
 node --check ui/app.js                    # syntax check for the DOM module
 ```
 
@@ -1375,7 +1375,7 @@ In "Configuration", add:
 Replace the first two bullets of "## Testing" in the spec with:
 
 ```markdown
-- `ui/model.js` (pure helpers) is unit-tested with Node's built-in runner: `node --test ui/`. No dependencies.
+- `ui/model.js` (pure helpers) is unit-tested with Node's built-in runner: `node --test ui/model.test.js`. No dependencies.
 - `node --check ui/app.js` passes.
 ```
 
@@ -1384,7 +1384,7 @@ Replace the first two bullets of "## Testing" in the spec with:
 Run:
 
 ```bash
-cd /home/majzok/ai/jev-local && node --test ui/ && node --check ui/app.js && docker compose up -d && docker compose ps
+cd /home/majzok/ai/jev-local && node --test ui/model.test.js && node --check ui/app.js && docker compose up -d && docker compose ps
 ```
 
 Expected: tests pass, both services `Up`, `von` `(healthy)`.

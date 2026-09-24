@@ -135,11 +135,11 @@ Single page, toolbar on top, three columns on wide screens (`state`, `questions`
 
 No test framework and no build. Verification is:
 
+- `ui/model.js` (pure helpers) is unit-tested with Node's built-in runner: `node --test ui/model.test.js`. No dependencies.
 - `node --check ui/app.js` passes.
-- `docker compose up -d playground`, open `http://localhost:3000`.
 - Each preset runs against the live container and its answer type renders correctly.
 - Copied curl pastes into a shell and returns the same answer.
-- 422 path: a score question with one level shows Von's `detail`.
+- 422 path: in raw mode, a question with an unknown `type` (for example `"magic"`) shows Von's `detail`. Note: Von accepts a one-level score, so that is not a 422 trigger.
 - 401 path: with `VON_API_KEY` set on the container, an empty or wrong key shows the 401 message and the right key succeeds.
 - Raw mode round-trip: form to raw to form preserves the draft; invalid JSON is rejected without changing the form.
 - Final check driven in the browser with screenshots.
