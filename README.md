@@ -50,7 +50,7 @@ A single static page, no build step, served by nginx from the `ui/` directory.
 - Results show a bar per option, the confidence for choice and score answers, the model name, token usage, and wall time.
 - A **curl** panel shows the equivalent command for the last request.
 - The dot in the toolbar is grey until checked, red when Von is unreachable, amber when Von is up but has not answered an inference request yet, and green once it has.
-- Three presets, one per question type, live under **Presets**.
+- Four presets live under **Presets**: one per question type, plus "Article tags", which asks one `noul` per tag to pick several tags from a list.
 
 The API base URL can be changed in the toolbar (or with `?api=http://host:port` in the page URL) and is remembered in the browser. If Von runs with an API key, paste it into the key field; it is kept in memory only.
 

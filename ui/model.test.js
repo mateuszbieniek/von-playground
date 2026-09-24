@@ -207,9 +207,18 @@ test("cloneDraft: mutations do not reach the source (presets stay pristine)", ()
   assert.notEqual(c.questions[0], src.questions[0]);
 });
 
-test("PRESETS: three, one per type, each valid", () => {
-  assert.deepEqual(PRESETS.map((p) => p.name), ["Ticket triage", "Review sentiment", "Churn risk"]);
-  assert.deepEqual(PRESETS.map((p) => p.draft.questions[0].type), ["choice", "score", "noul"]);
+test("PRESETS: four, each valid, first three one per type", () => {
+  assert.deepEqual(PRESETS.map((p) => p.name), ["Ticket triage", "Review sentiment", "Churn risk", "Article tags"]);
+  assert.deepEqual(PRESETS.slice(0, 3).map((p) => p.draft.questions[0].type), ["choice", "score", "noul"]);
   for (const p of PRESETS) assert.deepEqual(validate(p.draft), [], p.name);
   assert.equal(PRESETS[1].draft.questions[0].levels.length, 5);
+});
+
+test("PRESETS: Article tags is multi-label, one noul per tag with unique names", () => {
+  const qs = PRESETS[3].draft.questions;
+  assert.ok(qs.length >= 4);
+  assert.ok(qs.every((q) => q.type === "noul"));
+  assert.ok(qs.every((q) => q.trueText && q.falseText));
+  assert.equal(new Set(qs.map((q) => q.name)).size, qs.length);
+  assert.equal(new Set(qs.map((q) => q.id)).size, qs.length);
 });
