@@ -15,7 +15,10 @@ services:
     build:
       context: .
       args:
-        VON_VERSION: "1.2.2"
+        # Empty = latest von-sdk on PyPI. Set VON_VERSION in .env to pin a release.
+        VON_VERSION: "${VON_VERSION:-}"
+        # Change to force a fresh von-sdk install: VON_REFRESH=$(date +%s) docker compose up -d --build von
+        VON_REFRESH: "${VON_REFRESH:-0}"
         TORCH_VERSION: "2.14.0"
     ports:
       # Loopback only. Set VON_API_KEY before changing to 0.0.0.0.

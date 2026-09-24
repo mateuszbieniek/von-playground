@@ -82,11 +82,47 @@ Set these in the shell or in a `.env` file next to `docker-compose.yml`.
 | `VON_API_KEY` | empty | Optional bearer token required on `/v1/systemone`. |
 | `VON_THREADS` | `4` | CPU threads for inference. Keep at or below your physical core count. |
 | `VON_CORS_ORIGINS` | `*` | Comma-separated origins allowed to call the API from a browser. |
-| `HF_TOKEN`, `HF_HUB_OFFLINE` | empty, `0` | Hugging Face access. The checkpoint is public. |
+| `HF_TOKEN`, `HF_HUB_OFFLINE` | empty, `0` | Hugging Face access. The checkpoint is public. Set `HF_HUB_OFFLINE=1` to stop the container checking for newer weights on start. |
 | `PLAYGROUND_PORT` | `3000` | Playground port. |
 | `PLAYGROUND_BIND_ADDRESS` | `127.0.0.1` | Interface the playground is published on. |
 
-Build arguments in `docker-compose.yml`: `VON_VERSION` (the `von-sdk` PyPI release) and `TORCH_VERSION` (CPU wheel).
+Build-time variables, also read from the shell or `.env`:
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `VON_VERSION` | empty | Empty installs the latest `von-sdk` release from PyPI. Set a version such as `1.2.2` to pin. |
+| `VON_REFRESH` | `0` | Cache-bust for the `von-sdk` layer. Pass any new value to force a fresh install. |
+
+`TORCH_VERSION` (the CPU torch wheel) is fixed in `docker-compose.yml`; Von only requires `torch>=2.0.0`, so it rarely needs to move.
+
+## Updating Von
+
+Two things can change upstream: the `von-sdk` package on PyPI (the server and API code) and the model weights on Hugging Face (`wfzyx/von`).
+
+**Package.** The image installs the latest `von-sdk` at build time, but Docker caches that layer, so a plain rebuild will not notice a new release. Force the layer to rebuild:
+
+```bash
+VON_REFRESH=$(date +%s) docker compose up -d --build --wait von
+curl -s localhost:8000/health        # "version" shows what is now running
+```
+
+Only the `von-sdk` layer is rebuilt; the torch layer stays cached, so this takes about a minute. To see whether an update exists before rebuilding, compare the `version` from `/health` with <https://pypi.org/project/von-sdk/>.
+
+If a release breaks something, pin the last good version in `.env` and rebuild the same way:
+
+```bash
+echo 'VON_VERSION=1.2.2' >> .env
+VON_REFRESH=$(date +%s) docker compose up -d --build --wait von
+```
+
+**Weights.** Von downloads the weights from Hugging Face on first use and caches them in the `von-models` volume, keyed by the upstream commit. When Hugging Face has a newer commit, the next container start downloads it automatically as long as the container is online (`HF_HUB_OFFLINE` is `0`). Old snapshots stay on disk; to reclaim the space, or to force a clean re-download, drop the volume:
+
+```bash
+docker compose down -v
+docker compose up -d --wait
+```
+
+That re-downloads about 3 GB.
 
 ## Day-to-day commands
 

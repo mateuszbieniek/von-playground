@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A deployment repo that runs [Von](https://github.com/wfzyx/von) (open-source System One decision model, Jev-compatible `/v1/systemone` API) on CPU via Docker Compose. Upstream ships no Dockerfile, so `Dockerfile` here installs the `von-sdk` PyPI release on `python:3.12-slim` with CPU-only torch. There is no application source in this repo.
+A deployment repo that runs [Von](https://github.com/wfzyx/von) (open-source System One decision model, Jev-compatible `/v1/systemone` API) on CPU via Docker Compose. Upstream ships no Dockerfile, so `Dockerfile` here installs the latest `von-sdk` PyPI release on `python:3.12-slim` with CPU-only torch. There is no application source in this repo apart from the playground page under `ui/`.
 
 Files: `Dockerfile` (image), `docker-compose.yml` (services `von` and `playground`), `healthcheck.py` (readiness probe mounted into the container), `ui/` (static playground page served by `nginx:alpine`, no build step).
 
@@ -57,7 +57,7 @@ Environment variables read by Compose (shell or `.env`):
 - `HF_TOKEN`, `HF_HUB_OFFLINE`: Hugging Face access; the checkpoint is public.
 - `PLAYGROUND_PORT` (default 3000), `PLAYGROUND_BIND_ADDRESS` (default `127.0.0.1`): where the playground page is served. The page itself needs no configuration; the API URL and optional API key are entered in its toolbar (key is never persisted).
 
-Build args in `docker-compose.yml`: `VON_VERSION` (PyPI release, 1.2.2) and `TORCH_VERSION` (CPU wheel from `download.pytorch.org/whl/cpu`).
+Build args in `docker-compose.yml`: `VON_VERSION` (empty = latest `von-sdk` on PyPI; set in `.env` to pin), `VON_REFRESH` (cache-bust for the `von-sdk` layer; `VON_REFRESH=$(date +%s) docker compose up -d --build von` picks up a new release without rebuilding torch) and `TORCH_VERSION` (CPU wheel from `download.pytorch.org/whl/cpu`; von-sdk needs only `torch>=2.0.0`). Weights come from Hugging Face `wfzyx/von` unpinned and refresh on container start when a newer upstream commit exists; `docker compose down -v` forces a clean re-download.
 
 ## Operational notes
 
