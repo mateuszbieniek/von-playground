@@ -338,8 +338,81 @@ async function copyText(text, btn) {
   setTimeout(() => { btn.textContent = "copy"; }, 1200);
 }
 
+async function pollHealth() {
+  try {
+    const r = await fetch(`${apiBase()}/health`, { cache: "no-store" });
+    if (!r.ok) throw new Error(String(r.status));
+    if (health !== "serving") setHealth("up");
+  } catch {
+    setHealth("down");
+  }
+}
+
+async function probe() {
+  const body = { state: "probe", questions: { p: { type: "noul", instructions: "probe" } } };
+  try {
+    const r = await fetch(`${apiBase()}/v1/systemone`, { method: "POST", headers: headers(), body: JSON.stringify(body) });
+    if (r.ok) { setHealth("serving"); return; }
+    const data = await r.json().catch(() => null);
+    if (r.status === 422) setHealth("up", `Model not ready: ${formatDetail(data?.detail)}`);
+    else if (r.status === 401) setHealth("up", "Von up. API key required for inference.");
+    else setHealth("up", `Von up, inference returned HTTP ${r.status}`);
+  } catch {
+    setHealth("down");
+  }
+}
+
+function initHealth() {
+  pollHealth().then(probe);
+  setInterval(pollHealth, 10000);
+  $("#api-url").addEventListener("change", () => { setHealth("unknown"); pollHealth().then(probe); });
+}
+
+function setMode(next) {
+  if (next === mode) return;
+  clearRunError();
+  if (next === "raw") {
+    $("#raw").value = JSON.stringify(buildRequest(draft), null, 2);
+  } else {
+    let parsed;
+    try {
+      parsed = parseRequest($("#raw").value);
+    } catch (e) {
+      showRunError(e.message);
+      return;
+    }
+    draft = parsed;
+    $("#state").value = draft.state;
+    renderQuestions();
+  }
+  mode = next;
+  $("#tab-form").classList.toggle("active", mode === "form");
+  $("#tab-raw").classList.toggle("active", mode === "raw");
+  $("#form-view").classList.toggle("hidden", mode === "raw");
+  $("#raw-view").classList.toggle("hidden", mode === "form");
+  $("#state").disabled = mode === "raw";
+  refreshErrors();
+}
+
+function initTabs() {
+  $("#tab-form").addEventListener("click", () => setMode("form"));
+  $("#tab-raw").addEventListener("click", () => setMode("raw"));
+}
+
+function initShortcuts() {
+  document.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+      e.preventDefault();
+      if (!$("#run").disabled) run();
+    }
+  });
+}
+
 initToolbar();
 initState();
 initQuestions();
+initTabs();
+initShortcuts();
+initHealth();
 $("#run").addEventListener("click", run);
 refreshErrors();
