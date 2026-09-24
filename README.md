@@ -21,10 +21,20 @@ Inference on CPU takes roughly 0.3 s per request once the model is warm.
 ```bash
 git clone git@github.com:mateuszbieniek/von-playground.git
 cd von-playground
+docker compose up -d --build
+```
+
+The first start builds the image (a minute or two) and then, on the first request, downloads about 3 GB of model weights from Hugging Face. On a 100 Mbit/s connection that is roughly 5 minutes; on slower links plan for 15 minutes or more. Weights land in a Docker volume, so later starts take only the 30 seconds or so needed to load the model into memory.
+
+You do not have to wait for the download to finish before opening the playground: its status dot stays amber until the model has answered a request, then turns green. `docker compose ps` shows the same thing as `healthy` on the `von` service.
+
+If you would rather block until the model is ready, for example in a script, add `--wait`:
+
+```bash
 docker compose up -d --build --wait
 ```
 
-The first start builds the image and downloads the model weights from Hugging Face, which takes a few minutes. `--wait` returns once the model answers a real request, not just once the process is up.
+It returns once the health check, which sends a real inference request, has passed. The health check allows 10 minutes for the first start; on a very slow connection `--wait` may give up with a non-zero exit while the download continues in the background. Just wait and check `docker compose ps`.
 
 Then open the playground at <http://localhost:3000>. The API itself listens on <http://localhost:8000>.
 

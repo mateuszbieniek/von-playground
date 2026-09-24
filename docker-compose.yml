@@ -47,7 +47,7 @@ services:
       interval: 30s
       timeout: 25s
       retries: 3
-      start_period: 10m   # first boot downloads ~1.5 GB of weights
+      start_period: 10m   # first boot downloads ~3 GB of weights
       start_interval: 5s
 
   playground:
