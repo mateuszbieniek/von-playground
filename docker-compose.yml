@@ -50,5 +50,14 @@ services:
       start_period: 10m   # first boot downloads ~1.5 GB of weights
       start_interval: 5s
 
+  playground:
+    # Static single-page UI for /v1/systemone. No build: ./ui is served as-is.
+    image: nginx:alpine
+    ports:
+      - "${PLAYGROUND_BIND_ADDRESS:-127.0.0.1}:${PLAYGROUND_PORT:-3000}:80"
+    volumes:
+      - ./ui:/usr/share/nginx/html:ro
+    restart: unless-stopped
+
 volumes:
   von-models:

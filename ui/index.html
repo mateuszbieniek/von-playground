@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Von Playground</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="toolbar">
+    <span id="health" class="dot unknown" title="not checked yet"></span>
+    <strong class="brand">Von Playground</strong>
+    <input id="api-url" type="url" placeholder="http://localhost:8000" title="API base URL" spellcheck="false">
+    <input id="api-key" type="password" placeholder="API key (optional)" autocomplete="off">
+    <span class="spacer"></span>
+    <select id="preset" title="Load a preset">
+      <option value="">Presets…</option>
+    </select>
+    <button id="reset" type="button">Reset</button>
+    <button id="run" type="button" class="primary">Run</button>
+  </header>
+
+  <div id="confirm" class="confirm hidden">
+    Replace current draft?
+    <button id="confirm-yes" type="button">Yes</button>
+    <button id="confirm-no" type="button">No</button>
+  </div>
+
+  <main class="grid">
+    <section class="panel">
+      <h2>State</h2>
+      <textarea id="state" placeholder="Text, or a JSON object / array" spellcheck="false"></textarea>
+    </section>
+
+    <section class="panel">
+      <div class="tabs">
+        <button id="tab-form" type="button" class="tab active">Form</button>
+        <button id="tab-raw" type="button" class="tab">Raw request</button>
+      </div>
+      <div id="form-view">
+        <h2>Questions</h2>
+        <div id="questions"></div>
+        <button id="add-question" type="button">+ question</button>
+      </div>
+      <div id="raw-view" class="hidden">
+        <textarea id="raw" spellcheck="false"></textarea>
+      </div>
+      <ul id="errors" class="errors"></ul>
+    </section>
+
+    <section class="panel">
+      <h2>Results</h2>
+      <div id="results"><p class="muted">No run yet.</p></div>
+    </section>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

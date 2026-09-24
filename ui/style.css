@@ -1,0 +1,81 @@
+:root {
+  --bg: #0f1115;
+  --panel: #171a21;
+  --card: #1e222b;
+  --border: #2b303b;
+  --text: #e6e8ee;
+  --muted: #8b93a7;
+  --accent: #4f8cff;
+  --green: #3ddc84;
+  --amber: #f5b942;
+  --red: #ff5c5c;
+  --grey: #6b7280;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.4 system-ui, sans-serif; }
+h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button:disabled { opacity: .5; cursor: not-allowed; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.icon { padding: 2px 8px; line-height: 1; }
+input, select, textarea { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; width: 100%; }
+textarea { resize: vertical; min-height: 64px; }
+.hidden { display: none !important; }
+.muted { color: var(--muted); }
+
+.toolbar { display: flex; gap: 8px; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--panel); flex-wrap: wrap; }
+.toolbar input { width: auto; }
+#api-url { width: 220px; }
+#api-key { width: 180px; }
+.spacer { flex: 1; }
+.dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+.dot.unknown { background: var(--grey); }
+.dot.down { background: var(--red); }
+.dot.up { background: var(--amber); }
+.dot.serving { background: var(--green); }
+
+.confirm { padding: 8px 16px; background: #3a2f12; border-bottom: 1px solid var(--amber); display: flex; gap: 8px; align-items: center; }
+
+.grid { display: grid; grid-template-columns: 1fr; gap: 16px; padding: 16px; }
+@media (min-width: 1100px) { .grid { grid-template-columns: 1fr 1.4fr 1.2fr; } }
+.panel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px; min-height: 300px; }
+#state { min-height: 240px; }
+#raw { min-height: 400px; font-family: ui-monospace, monospace; font-size: 12px; }
+
+.tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+.tab { background: transparent; border-color: transparent; color: var(--muted); }
+.tab.active { background: var(--card); border-color: var(--border); color: var(--text); }
+
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 10px; }
+.card-head { display: flex; gap: 6px; margin-bottom: 6px; }
+.card-head .q-name { flex: 1; }
+.card-head .q-type { width: auto; }
+.card textarea { margin-bottom: 6px; min-height: 48px; }
+.row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
+.row .level-no { width: 20px; text-align: right; color: var(--muted); }
+.add-row { margin-top: 2px; }
+
+.errors { margin: 8px 0 0; padding-left: 18px; color: var(--red); }
+.errors:empty { display: none; }
+#run-error { color: var(--red); margin-top: 8px; white-space: pre-wrap; }
+
+.answer h3 { margin: 0 0 6px; font-size: 14px; display: flex; gap: 8px; align-items: center; }
+.answer .type { color: var(--muted); font-weight: normal; font-size: 12px; }
+.badge { font-size: 11px; padding: 2px 6px; border-radius: 10px; color: #000; margin-left: auto; }
+.badge.green { background: var(--green); }
+.badge.amber { background: var(--amber); }
+.badge.red { background: var(--red); }
+.bar { display: grid; grid-template-columns: 1fr 3fr 48px; gap: 8px; align-items: center; margin: 3px 0; font-size: 13px; }
+.bar .label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar .track { height: 10px; background: var(--bg); border-radius: 5px; overflow: hidden; }
+.bar .fill { height: 100%; background: var(--grey); }
+.bar.win .label { font-weight: bold; }
+.bar.win .fill { background: var(--accent); }
+.bar .pct { text-align: right; color: var(--muted); }
+.headline { font-size: 22px; margin: 4px 0 8px; }
+.headline small { color: var(--muted); font-size: 13px; }
+.footer { display: flex; gap: 14px; flex-wrap: wrap; color: var(--muted); font-size: 12px; margin-top: 10px; }
+details { margin-top: 8px; }
+pre { background: var(--bg); padding: 8px; border-radius: 6px; overflow: auto; font-size: 12px; max-height: 320px; }
