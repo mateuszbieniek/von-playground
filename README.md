@@ -40,6 +40,8 @@ Then open the playground at <http://localhost:3000>. The API itself listens on <
 
 ## The playground
 
+![Von Playground: state, questions, and results with probability bars](docs/images/playground.png)
+
 A single static page, no build step, served by nginx from the `ui/` directory.
 
 - Write the state as plain text or as a JSON object or array.
