@@ -190,7 +190,156 @@ function initQuestions() {
   });
 }
 
+let health = "unknown";
+
+function setHealth(state, tip) {
+  health = state;
+  const dot = $("#health");
+  dot.className = `dot ${state}`;
+  dot.title = tip || { unknown: "not checked yet", down: "Von unreachable", up: "Von up, model not verified yet", serving: "Von serving" }[state];
+}
+
+function headers() {
+  const h = { "content-type": "application/json" };
+  if (apiKey) h.Authorization = `Bearer ${apiKey}`;
+  return h;
+}
+
+function showRunError(msg) {
+  let el = $("#run-error");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "run-error";
+    $("#errors").after(el);
+  }
+  el.textContent = msg;
+}
+
+function clearRunError() {
+  $("#run-error")?.remove();
+}
+
+let pendingTimer = null;
+
+function setPending(on) {
+  const btn = $("#run");
+  clearInterval(pendingTimer);
+  if (on) {
+    const t0 = performance.now();
+    btn.disabled = true;
+    btn.textContent = "Running… 0 ms";
+    pendingTimer = setInterval(() => { btn.textContent = `Running… ${Math.round(performance.now() - t0)} ms`; }, 100);
+  } else {
+    btn.textContent = "Run";
+    refreshErrors();
+  }
+}
+
+async function run() {
+  clearRunError();
+  let body;
+  if (mode === "raw") {
+    try { body = JSON.parse($("#raw").value); } catch (e) { showRunError(`Invalid JSON: ${e.message}`); return; }
+  } else {
+    if (validate(draft).length) return;
+    body = buildRequest(draft);
+  }
+  setPending(true);
+  const t0 = performance.now();
+  try {
+    const res = await fetch(`${apiBase()}/v1/systemone`, { method: "POST", headers: headers(), body: JSON.stringify(body) });
+    const ms = Math.round(performance.now() - t0);
+    const text = await res.text();
+    let data = null;
+    try { data = JSON.parse(text); } catch { /* non-JSON body */ }
+    if (res.status === 401) { showRunError("API key required or wrong. Set it in the toolbar."); return; }
+    if (res.status === 422) { showRunError(formatDetail(data?.detail)); return; }
+    if (!res.ok) { showRunError(`Von unreachable at ${apiBase()} (HTTP ${res.status})`); return; }
+    setHealth("serving");
+    renderResults(data, body, ms);
+  } catch {
+    showRunError(`Von unreachable at ${apiBase()}`);
+  } finally {
+    setPending(false);
+  }
+}
+
+function pct(p) {
+  return `${(p * 100).toFixed(1)}%`;
+}
+
+function bar(label, p, win) {
+  return `<div class="bar${win ? " win" : ""}">
+    <span class="label" title="${esc(label)}">${esc(label)}</span>
+    <span class="track"><span class="fill" style="width:${(p * 100).toFixed(1)}%"></span></span>
+    <span class="pct">${pct(p)}</span>
+  </div>`;
+}
+
+function badge(conf) {
+  const band = conf >= 0.8 ? "green" : conf >= 0.5 ? "amber" : "red";
+  return `<span class="badge ${band}">conf ${conf.toFixed(2)}</span>`;
+}
+
+function answerCard(name, a) {
+  let body = "";
+  let head = "";
+  if (a.type === "choice") {
+    head = badge(a.confidence);
+    const rows = Object.entries(a.probabilities).sort((x, y) => y[1] - x[1]);
+    body = rows.map(([k, p]) => bar(k, p, k === a.choice)).join("");
+  } else if (a.type === "score") {
+    head = badge(a.confidence);
+    const keys = Object.keys(a.probabilities).sort((x, y) => Number(x) - Number(y));
+    const argmax = keys.reduce((best, k) => (a.probabilities[k] > a.probabilities[best] ? k : best), keys[0]);
+    body = `<div class="headline">${a.score.toFixed(2)} <small>of 0 to ${keys.length - 1}</small></div>`
+      + keys.map((k) => bar(`${k}: ${a.legend[k] ?? ""}`, a.probabilities[k], k === argmax)).join("");
+  } else if (a.type === "noul") {
+    body = `<div class="headline">${pct(a.noul)} <small>P(true)</small></div>` + bar("true", a.noul, a.noul >= 0.5);
+  } else {
+    body = `<pre>${esc(JSON.stringify(a, null, 2))}</pre>`;
+  }
+  return `<div class="card answer">
+    <h3>${esc(name)} <span class="type">${esc(a.type ?? "?")}</span>${head}</h3>
+    ${body}
+  </div>`;
+}
+
+function renderResults(data, request, ms) {
+  const answers = Object.entries(data.answers || {}).map(([n, a]) => answerCard(n, a)).join("");
+  const u = data.usage || {};
+  $("#results").innerHTML = `
+    ${answers}
+    <div class="footer">
+      <span>model <b>${esc(data.model ?? "?")}</b></span>
+      <span>in <b>${u.input_tokens ?? "?"}</b> tok</span>
+      <span>out <b>${u.output_tokens ?? "?"}</b> tok</span>
+      <span>time <b>${ms}</b> ms</span>
+    </div>
+    <details>
+      <summary>Raw JSON <button type="button" class="icon" id="copy-json">copy</button></summary>
+      <pre id="raw-json">${esc(JSON.stringify(data, null, 2))}</pre>
+    </details>
+    <details>
+      <summary>curl <button type="button" class="icon" id="copy-curl">copy</button></summary>
+      <pre id="curl-text">${esc(toCurl(apiBase(), request, apiKey))}</pre>
+    </details>`;
+  $("#copy-json").addEventListener("click", (e) => { e.preventDefault(); copyText($("#raw-json").textContent, e.target); });
+  $("#copy-curl").addEventListener("click", (e) => { e.preventDefault(); copyText($("#curl-text").textContent, e.target); });
+}
+
+async function copyText(text, btn) {
+  try {
+    await navigator.clipboard.writeText(text);
+    btn.textContent = "copied";
+  } catch {
+    btn.textContent = "copy failed";
+  }
+  setTimeout(() => { btn.textContent = "copy"; }, 1200);
+}
+
 initToolbar();
 initState();
 initQuestions();
+$("#run").addEventListener("click", run);
 refreshErrors();
