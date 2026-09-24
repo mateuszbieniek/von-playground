@@ -21,6 +21,10 @@ export function isDraftEmpty(draft) {
   return draft.state.trim() === "" && draft.questions.length === 0;
 }
 
+export function cloneDraft(d) {
+  return { state: d.state, questions: d.questions.map((q) => structuredClone(q)) };
+}
+
 // Von accepts a string, object, or array as state. JSON-looking text is sent parsed.
 export function parseState(text) {
   const t = text.trim();

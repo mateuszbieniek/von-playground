@@ -1,6 +1,6 @@
 import {
   newQuestion, emptyDraft, isDraftEmpty, buildRequest, validate, parseRequest,
-  formatDetail, toCurl, PRESETS,
+  formatDetail, toCurl, PRESETS, cloneDraft,
 } from "./model.js";
 
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -25,6 +25,7 @@ function initToolbar() {
   let saved = "";
   try { saved = localStorage.getItem(API_STORAGE) || ""; } catch { /* storage blocked */ }
   $("#api-url").value = params.get("api") || saved || DEFAULT_API;
+  try { localStorage.setItem(API_STORAGE, apiBase()); } catch { /* storage blocked */ }
   $("#api-url").addEventListener("change", () => {
     try { localStorage.setItem(API_STORAGE, apiBase()); } catch { /* storage blocked */ }
   });
@@ -60,10 +61,11 @@ function hideConfirm() {
 }
 
 function loadDraft(d) {
-  draft = { state: d.state, questions: d.questions.map((q) => ({ ...q })) };
+  draft = cloneDraft(d);
   $("#state").value = draft.state;
   renderQuestions();
   refreshErrors();
+  if (mode === "raw") $("#raw").value = JSON.stringify(buildRequest(draft), null, 2);
 }
 
 function initState() {
@@ -219,6 +221,21 @@ function clearRunError() {
   $("#run-error")?.remove();
 }
 
+function renderCurl(request) {
+  let box = $("#curl-box");
+  if (!box) {
+    box = document.createElement("div");
+    box.id = "curl-box";
+    box.innerHTML = `<details>
+      <summary>curl <button type="button" class="icon" id="copy-curl">copy</button></summary>
+      <pre id="curl-text"></pre>
+    </details>`;
+    $("#errors").after(box);
+    $("#copy-curl").addEventListener("click", (e) => { e.preventDefault(); copyText($("#curl-text").textContent, e.target); });
+  }
+  $("#curl-text").textContent = toCurl(apiBase(), request, apiKey);
+}
+
 let pendingTimer = null;
 
 function setPending(on) {
@@ -244,6 +261,8 @@ async function run() {
     if (validate(draft).length) return;
     body = buildRequest(draft);
   }
+  renderCurl(body);
+  $("#results").innerHTML = '<p class="muted">Running…</p>';
   setPending(true);
   const t0 = performance.now();
   try {
@@ -256,7 +275,7 @@ async function run() {
     if (res.status === 422) { showRunError(formatDetail(data?.detail)); return; }
     if (!res.ok) { showRunError(`Von unreachable at ${apiBase()}`); return; }
     setHealth("serving");
-    renderResults(data, body, ms);
+    renderResults(data, ms);
   } catch {
     showRunError(`Von unreachable at ${apiBase()}`);
   } finally {
@@ -305,7 +324,7 @@ function answerCard(name, a) {
   </div>`;
 }
 
-function renderResults(data, request, ms) {
+function renderResults(data, ms) {
   const answers = Object.entries(data.answers || {}).map(([n, a]) => answerCard(n, a)).join("");
   const u = data.usage || {};
   $("#results").innerHTML = `
@@ -319,13 +338,8 @@ function renderResults(data, request, ms) {
     <details>
       <summary>Raw JSON <button type="button" class="icon" id="copy-json">copy</button></summary>
       <pre id="raw-json">${esc(JSON.stringify(data, null, 2))}</pre>
-    </details>
-    <details>
-      <summary>curl <button type="button" class="icon" id="copy-curl">copy</button></summary>
-      <pre id="curl-text">${esc(toCurl(apiBase(), request, apiKey))}</pre>
     </details>`;
   $("#copy-json").addEventListener("click", (e) => { e.preventDefault(); copyText($("#raw-json").textContent, e.target); });
-  $("#copy-curl").addEventListener("click", (e) => { e.preventDefault(); copyText($("#curl-text").textContent, e.target); });
 }
 
 async function copyText(text, btn) {

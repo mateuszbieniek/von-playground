@@ -16,9 +16,9 @@ docker compose logs -f von              # server logs
 docker compose down                     # stop; add -v to also drop cached weights (~3 GB re-download)
 curl -s localhost:8000/health           # liveness only, see note below
 curl -s localhost:8000/v1/models        # model aliases
-open http://localhost:3000                # playground UI (service `playground`)
-node --test ui/model.test.js                           # unit tests for ui/model.js (Node 18+, no deps)
-node --check ui/app.js                    # syntax check for the DOM module
+xdg-open http://localhost:3000          # playground UI (service `playground`); macOS: open
+node --test ui/model.test.js            # unit tests for ui/model.js (Node 18+, no deps)
+node --check ui/app.js                  # syntax check for the DOM module
 ```
 
 Smoke test (all three question types):
@@ -44,7 +44,7 @@ curl -s localhost:8000/v1/systemone -H 'content-type: application/json' -d '{
 
 ## Playground UI
 
-`ui/` is a static page (`index.html`, `style.css`, `app.js`, `model.js`) served by the `playground` service. The browser calls Von directly at the API base URL shown in the toolbar (default `http://localhost:8000`, saved in `localStorage`, overridable with `?api=`); this works because Von's CORS default is `*`. `model.js` is pure and unit-tested; `app.js` is DOM only. Design spec: `docs/superpowers/specs/2026-09-24-von-playground-ui-design.md`.
+`ui/` is a static page (`index.html`, `style.css`, `app.js`, `model.js`) served by the `playground` service. The browser calls Von directly at the API base URL shown in the toolbar (default `http://localhost:8000`, saved in `localStorage`, overridable with `?api=`); this works because Von's CORS default is `*`. `model.js` is pure and unit-tested; `app.js` is DOM only. Design spec: `docs/superpowers/specs/2026-09-24-von-playground-ui-design.md`. The `?api=` override is unvalidated: a crafted link can point the page at another origin, and a key typed afterwards would be sent there; the page is loopback-only by default and the URL is always visible in the toolbar.
 
 ## Configuration
 

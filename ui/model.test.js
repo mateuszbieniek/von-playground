@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   newQuestion, emptyDraft, isDraftEmpty, parseState, stateToText,
-  buildQuestion, buildRequest, validate, parseRequest, formatDetail, toCurl, PRESETS,
+  buildQuestion, buildRequest, validate, parseRequest, formatDetail, toCurl, PRESETS, cloneDraft,
 } from "./model.js";
 
 test("parseState: JSON object text becomes object", () => {
@@ -193,6 +193,18 @@ test("toCurl: no auth header when key empty, single quotes escaped", () => {
 test("toCurl: auth header when key set", () => {
   const out = toCurl("http://x", { state: "s", questions: {} }, "k1");
   assert.ok(out.includes("-H 'Authorization: Bearer k1'"));
+});
+
+test("cloneDraft: mutations do not reach the source (presets stay pristine)", () => {
+  const src = PRESETS[0].draft;
+  const c = cloneDraft(src);
+  c.questions[0].criteria[0].key = "MUTATED";
+  c.questions[0].criteria.push({ key: "z", description: "" });
+  c.state = "changed";
+  assert.notEqual(src.questions[0].criteria[0].key, "MUTATED");
+  assert.equal(src.questions[0].criteria.length, 3);
+  assert.notEqual(src.state, "changed");
+  assert.notEqual(c.questions[0], src.questions[0]);
 });
 
 test("PRESETS: three, one per type, each valid", () => {
