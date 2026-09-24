@@ -254,7 +254,7 @@ async function run() {
     try { data = JSON.parse(text); } catch { /* non-JSON body */ }
     if (res.status === 401) { showRunError("API key required or wrong. Set it in the toolbar."); return; }
     if (res.status === 422) { showRunError(formatDetail(data?.detail)); return; }
-    if (!res.ok) { showRunError(`Von unreachable at ${apiBase()} (HTTP ${res.status})`); return; }
+    if (!res.ok) { showRunError(`Von unreachable at ${apiBase()}`); return; }
     setHealth("serving");
     renderResults(data, body, ms);
   } catch {
@@ -312,8 +312,8 @@ function renderResults(data, request, ms) {
     ${answers}
     <div class="footer">
       <span>model <b>${esc(data.model ?? "?")}</b></span>
-      <span>in <b>${u.input_tokens ?? "?"}</b> tok</span>
-      <span>out <b>${u.output_tokens ?? "?"}</b> tok</span>
+      <span>in <b>${esc(u.input_tokens ?? "?")}</b> tok</span>
+      <span>out <b>${esc(u.output_tokens ?? "?")}</b> tok</span>
       <span>time <b>${ms}</b> ms</span>
     </div>
     <details>

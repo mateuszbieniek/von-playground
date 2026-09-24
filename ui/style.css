@@ -26,7 +26,7 @@ textarea { resize: vertical; min-height: 64px; }
 .muted { color: var(--muted); }
 
 .toolbar { display: flex; gap: 8px; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--panel); flex-wrap: wrap; }
-.toolbar input { width: auto; }
+.toolbar input, .toolbar select { width: auto; }
 #api-url { width: 220px; }
 #api-key { width: 180px; }
 .spacer { flex: 1; }
@@ -67,7 +67,7 @@ textarea { resize: vertical; min-height: 64px; }
 .badge.green { background: var(--green); }
 .badge.amber { background: var(--amber); }
 .badge.red { background: var(--red); }
-.bar { display: grid; grid-template-columns: 1fr 3fr 48px; gap: 8px; align-items: center; margin: 3px 0; font-size: 13px; }
+.bar { display: grid; grid-template-columns: minmax(0, 2fr) 3fr 48px; gap: 8px; align-items: center; margin: 3px 0; font-size: 13px; }
 .bar .label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bar .track { height: 10px; background: var(--bg); border-radius: 5px; overflow: hidden; }
 .bar .fill { height: 100%; background: var(--grey); }
