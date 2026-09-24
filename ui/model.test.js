@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   newQuestion, emptyDraft, isDraftEmpty, parseState, stateToText,
-  buildQuestion, buildRequest,
+  buildQuestion, buildRequest, validate,
 } from "./model.js";
 
 test("parseState: JSON object text becomes object", () => {
@@ -79,4 +79,54 @@ test("buildRequest: envelope with von-latest and questions keyed by name", () =>
     state: { body: "hi" },
     questions: { churn: { type: "noul", instructions: "cancel?" } },
   });
+});
+
+test("validate: empty draft reports state and questions", () => {
+  assert.deepEqual(validate(emptyDraft()), ["State is empty.", "Add at least one question."]);
+});
+
+test("validate: valid draft returns no errors", () => {
+  const draft = { state: "hi", questions: [
+    { ...newQuestion("choice"), name: "dept", instructions: "which?", criteria: [
+      { key: "a", description: "" }, { key: "b", description: "" } ] },
+    { ...newQuestion("score"), name: "anger", instructions: "how?", levels: ["calm", "mad"] },
+    { ...newQuestion("noul"), name: "churn", instructions: "cancel?" },
+  ] };
+  assert.deepEqual(validate(draft), []);
+});
+
+test("validate: names must be non-empty and unique", () => {
+  const draft = { state: "hi", questions: [
+    { ...newQuestion("noul"), name: "", instructions: "x" },
+    { ...newQuestion("noul"), name: "dup", instructions: "x" },
+    { ...newQuestion("noul"), name: "dup", instructions: "x" },
+  ] };
+  assert.deepEqual(validate(draft), [
+    "Question 1: name is empty.",
+    '"dup": duplicate name.',
+  ]);
+});
+
+test("validate: instructions required", () => {
+  const draft = { state: "hi", questions: [{ ...newQuestion("noul"), name: "q", instructions: " " }] };
+  assert.deepEqual(validate(draft), ['"q": instructions are empty.']);
+});
+
+test("validate: choice needs 2+ options with unique non-empty keys", () => {
+  const one = { state: "hi", questions: [{ ...newQuestion("choice"), name: "q", instructions: "x",
+    criteria: [{ key: "a", description: "" }] }] };
+  assert.deepEqual(validate(one), ['"q": needs at least 2 options.']);
+  const blank = { state: "hi", questions: [{ ...newQuestion("choice"), name: "q", instructions: "x",
+    criteria: [{ key: "a", description: "" }, { key: " ", description: "" }] }] };
+  assert.deepEqual(validate(blank), ['"q": an option key is empty.']);
+  const dup = { state: "hi", questions: [{ ...newQuestion("choice"), name: "q", instructions: "x",
+    criteria: [{ key: "a", description: "" }, { key: "a", description: "" }] }] };
+  assert.deepEqual(validate(dup), ['"q": duplicate option key "a".']);
+});
+
+test("validate: score needs 2 to 10 non-empty levels", () => {
+  const mk = (levels) => ({ state: "hi", questions: [{ ...newQuestion("score"), name: "q", instructions: "x", levels }] });
+  assert.deepEqual(validate(mk(["a"])), ['"q": needs 2 to 10 levels.']);
+  assert.deepEqual(validate(mk(Array(11).fill("l"))), ['"q": needs 2 to 10 levels.']);
+  assert.deepEqual(validate(mk(["a", ""])), ['"q": a level is empty.']);
 });

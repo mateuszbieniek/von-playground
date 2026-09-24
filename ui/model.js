@@ -57,3 +57,30 @@ export function buildRequest(draft) {
   for (const q of draft.questions) questions[q.name] = buildQuestion(q);
   return { model: "von-latest", state: parseState(draft.state), questions };
 }
+
+export function validate(draft) {
+  const errors = [];
+  if (draft.state.trim() === "") errors.push("State is empty.");
+  if (draft.questions.length === 0) errors.push("Add at least one question.");
+  const names = new Set();
+  draft.questions.forEach((q, i) => {
+    const label = q.name.trim() === "" ? `Question ${i + 1}` : `"${q.name}"`;
+    if (q.name.trim() === "") errors.push(`${label}: name is empty.`);
+    else if (names.has(q.name)) errors.push(`${label}: duplicate name.`);
+    names.add(q.name);
+    if (q.instructions.trim() === "") errors.push(`${label}: instructions are empty.`);
+    if (q.type === "choice") {
+      if (q.criteria.length < 2) errors.push(`${label}: needs at least 2 options.`);
+      const keys = new Set();
+      for (const c of q.criteria) {
+        if (c.key.trim() === "") { errors.push(`${label}: an option key is empty.`); break; }
+        if (keys.has(c.key)) { errors.push(`${label}: duplicate option key "${c.key}".`); break; }
+        keys.add(c.key);
+      }
+    } else if (q.type === "score") {
+      if (q.levels.length < 2 || q.levels.length > 10) errors.push(`${label}: needs 2 to 10 levels.`);
+      if (q.levels.some((l) => l.trim() === "")) errors.push(`${label}: a level is empty.`);
+    }
+  });
+  return errors;
+}
