@@ -70,7 +70,7 @@ textarea { resize: vertical; min-height: 64px; }
 .bar { display: grid; grid-template-columns: minmax(0, 2fr) 3fr 48px; gap: 8px; align-items: center; margin: 3px 0; font-size: 13px; }
 .bar .label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bar .track { height: 10px; background: var(--bg); border-radius: 5px; overflow: hidden; }
-.bar .fill { height: 100%; background: var(--grey); }
+.bar .fill { display: block; height: 100%; background: var(--grey); }
 .bar.win .label { font-weight: bold; }
 .bar.win .fill { background: var(--accent); }
 .bar .pct { text-align: right; color: var(--muted); }
