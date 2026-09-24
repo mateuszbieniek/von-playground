@@ -157,29 +157,21 @@ export const PRESETS = [
   ]),
   preset("Churn risk", '{"body": "this is the third outage this week, we are evaluating alternatives", "plan": "enterprise"}', [
     { type: "noul", name: "churn", instructions: "Is this customer likely to cancel?",
-      trueText: "yes, it talks about threatens to leave, mentions competitors, repeated failures",
+      trueText: "threatens to leave, mentions competitors, repeated failures",
       falseText: "routine question, satisfied tone" },
   ]),
   // Multi-label tagging: Von has no multi-select type, so ask one noul per tag
-  // and keep the tags whose P(true) clears your threshold.
+  // and keep the tags whose P(true) clears your threshold. No criteria on
+  // purpose: real tag lists are bare names, so the questions can be generated
+  // from the list as-is.
   preset("Article tags", "We moved our CI pipeline from Jenkins to GitHub Actions last quarter. "
     + "The biggest win was caching Docker layers between runs, which cut build time from 25 minutes to 6. "
     + "Along the way we found two secrets committed in plain text and rotated them; "
     + "we now run gitleaks on every pull request.", [
-    { type: "noul", name: "devops", instructions: "Is DevOps one of the topics of this article?",
-      trueText: "yes, it talks about CI/CD, pipelines, builds, deployments, infrastructure",
-      falseText: "no, nothing about builds or deployments" },
-    { type: "noul", name: "security", instructions: "Is security one of the topics of this article?",
-      trueText: "yes, it talks about secrets, vulnerabilities, scanning, access control",
-      falseText: "no, security not discussed" },
-    { type: "noul", name: "docker", instructions: "Is Docker one of the topics of this article?",
-      trueText: "yes, it talks about containers, images, layers, Dockerfiles",
-      falseText: "no, containers not discussed" },
-    { type: "noul", name: "ml", instructions: "Is machine learning one of the topics of this article?",
-      trueText: "yes, it talks about models, training, datasets, inference",
-      falseText: "no, nothing about machine learning" },
-    { type: "noul", name: "career", instructions: "Is career one of the topics of this article?",
-      trueText: "yes, it talks about hiring, interviews, promotions, job advice",
-      falseText: "no, nothing about careers" },
+    { type: "noul", name: "devops", instructions: "Is DevOps one of the topics of this article?" },
+    { type: "noul", name: "security", instructions: "Is security one of the topics of this article?" },
+    { type: "noul", name: "docker", instructions: "Is Docker one of the topics of this article?" },
+    { type: "noul", name: "ml", instructions: "Is machine learning one of the topics of this article?" },
+    { type: "noul", name: "career", instructions: "Is career one of the topics of this article?" },
   ]),
 ];

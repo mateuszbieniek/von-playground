@@ -214,11 +214,11 @@ test("PRESETS: four, each valid, first three one per type", () => {
   assert.equal(PRESETS[1].draft.questions[0].levels.length, 5);
 });
 
-test("PRESETS: Article tags is multi-label, one noul per tag with unique names", () => {
+test("PRESETS: Article tags is multi-label, one criteria-free noul per tag with unique names", () => {
   const qs = PRESETS[3].draft.questions;
   assert.ok(qs.length >= 4);
   assert.ok(qs.every((q) => q.type === "noul"));
-  assert.ok(qs.every((q) => q.trueText && q.falseText));
+  assert.ok(qs.every((q) => !q.trueText && !q.falseText));
   assert.equal(new Set(qs.map((q) => q.name)).size, qs.length);
   assert.equal(new Set(qs.map((q) => q.id)).size, qs.length);
 });
